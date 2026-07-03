@@ -1,92 +1,126 @@
-# Video Thumbnail Browser（WhiteBrowser風サムネイル動画ブラウザ）
+# Video Thumbnail Browser
 
-複数フォルダを監視し、動画ファイルをサムネイル一覧で表示するWindows専用デスクトップアプリです。
-サムネイル上でマウスを左右に動かすと、シークバーのようにプレビューフレームが切り替わります。
+WhiteBrowser ライクな動画・書庫サムネイルブラウザです。複数フォルダを監視し、ファイルをサムネイルグリッドで一覧表示します。サムネイル上でマウスを左右に動かすとシークバーのようにプレビューフレームが切り替わります。
 
 ## 主な機能
 
-- 複数フォルダの登録・監視（サブフォルダ再帰、新規ファイルの自動検出）
-- 動画1本につき複数枚（既定10枚）のサムネイルを自動生成し、ホバーでスクラブプレビュー
-- SQLiteによるキャッシュ（ファイルサイズ・更新日時が変わらない限り再生成しない）
-- 数千〜数万ファイルでも軽く動くよう、行グルーピング＋WPF標準仮想化で一覧表示
-- ファイル名検索、ダブルクリックで既定プレーヤー再生、右クリックでフォルダーを開く
+- **サムネイルスクラブ** — ホバーで複数フレームをシーク再生
+- **書庫対応** — ZIP/CBZ/RAR/CBR/7z等の表紙画像をサムネイル表示
+- **フォルダ監視** — 複数フォルダをリアルタイム監視、新規ファイルを自動検出
+- **D&Dでフォルダ登録** — サムネイルエリアにフォルダをドラッグ＆ドロップで追加
+- **タグ・評価** — 星1〜5の評価、スラッシュ区切りでタグをグループ分け（例: `アニメ/SF`）
+- **一括タグ付与** — 複数ファイルをCtrl/Shiftで選択して一括でタグを付与
+- **種別フィルター** — 動画のみ・書庫のみに絞り込み
+- **インクリメンタルサーチ** — `tag:アニメ` `rating:>=4` で即座に絞り込み
+- **形態素解析トークン** — TinySegmenter移植によりファイル名を分割、クリックで検索追加
+- **並べ替え** — ファイル名・登録日時・更新日時・再生回数・評価・サイズ・動画時間・タグ数
+- **詳細パネル** — クリックで登録日時・再生回数・ファイルサイズ等を表示
+- **DBプロファイル切替** — 用途別に複数のライブラリを `.profile` ファイルで管理
+- **ページネーション** — 20件ごとにページ分割、ページ番号クリック/直接入力でジャンプ
+- **起動アプリ登録** — 動画用・書庫用それぞれ3つまで登録（ダブルクリックでソフト1、右クリックでソフト2/3）
+- **ファイル操作** — 右クリックからファイル名コピー・フルパスコピー・ごみ箱削除
+- **SQLiteキャッシュ** — サムネイルをキャッシュ、変更のないファイルは再生成しない
+- **2段階起動** — 起動直後にキャッシュから即表示、バックグラウンドでスキャン
 
 ## 必要環境
 
-- Windows 10/11
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- Visual Studio 2022（任意。`dotnet build` でも可）
-- **FFmpeg**（`ffmpeg.exe` と `ffprobe.exe`）— サムネイル生成に必須
+- Windows 10 / 11
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)（実行時は[.NET 8 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)のみでもOK）
+- **FFmpeg**（`ffmpeg.exe` と `ffprobe.exe`）— 動画サムネイル生成に必須、**同梱していません**
+- 書庫（RAR/7z等）のカバー抽出には**7-Zip**推奨（ZIP/CBZは不要）
 
-## セットアップ手順
+## セットアップ
 
-1. **FFmpegを用意する**
-   - https://www.gyan.dev/ffmpeg/builds/ などから Windows用ビルドを取得
-   - `ffmpeg.exe` と `ffprobe.exe` を、実行ファイルと同じ階層の `Tools` フォルダーに置く
-     ```
-     VideoThumbnailBrowser/
-       VideoThumbnailBrowser.exe
-       Tools/
-         ffmpeg.exe
-         ffprobe.exe
-     ```
-   - もしくはシステムのPATHに `ffmpeg`/`ffprobe` を追加していればそれを使います（`Tools`フォルダーが優先されます）
-   - 見つからない場合、起動後のステータスバーに警告が表示されます
+### 1. FFmpeg を用意する
 
-2. **ビルド**
-   - Visual Studio: `VideoThumbnailBrowser.sln` を開いてビルド・実行（NuGetが自動復元されます）
-   - コマンドライン:
-     ```
-     cd VideoThumbnailBrowser
-     dotnet build
-     dotnet run
-     ```
-
-3. **使い方**
-   - 左サイドバーの「＋ フォルダーを追加」で監視フォルダを登録
-   - 初回はサムネイル生成のためスキャンに時間がかかります（ステータスバーに進捗表示）
-   - 以降は登録フォルダへの新規ファイル追加を自動検出し、サムネイルを生成します
-   - サムネイル上でマウスを左右に動かすとプレビューが切り替わります
-   - ダブルクリックで再生、右クリックで「フォルダーを開く」
-
-## アーキテクチャ概要
+- 公式ビルド: <https://www.gyan.dev/ffmpeg/builds/>
+- `ffmpeg.exe` と `ffprobe.exe` を `Tools/` フォルダに置く
 
 ```
-Models/      VideoItem, WatchedFolder         … 純粋なデータ
-Services/
-  VideoFileTypes          拡張子による動画判定
-  VideoScanner             フォルダ再帰スキャン
-  FolderWatcherService     FileSystemWatcherラッパー（書き込み完了待ちを含む）
-  FfmpegThumbnailGenerator ffmpeg/ffprobeを呼んでサムネイル生成（同時実行数を制限）
-  ThumbnailCacheDb         SQLiteキャッシュ（サイズ・更新日時で再生成スキップ判定）
-  AppSettings              監視フォルダ等をJSONで永続化
-ViewModels/
-  MainViewModel            全体の制御（フォルダ管理・スキャン・検索・行の再構築）
-  VideoItemViewModel       1本の動画のUI状態（カバー画像＋スクラブ用フレーム）
-  RowViewModel             列数ぶんをまとめた「1行」（仮想化のための単位）
-Controls/
-  ScrubThumbnailControl    ホバーでスクラブするサムネイルUI
+VideoThumbnailBrowser.exe
+Tools/
+  ffmpeg.exe
+  ffprobe.exe
+  7z.exe        ← 任意（RAR/7z書庫のサムネイル対応）
 ```
 
-### なぜ「行」でグルーピングしているか
+または PATH が通った場所でもOKです。
 
-WPF標準の `VirtualizingStackPanel` は縦方向のスタックしか仮想化できず、
-タイル状のグリッドをそのまま仮想化する標準コントロールはありません。
-そこで `ColumnCount` 列ぶんのアイテムを1つの `RowViewModel` にまとめ、
-それを `VirtualizingStackPanel` で縦に並べることで、画面外の行は実体化されず、
-数万ファイルでもスクロールが軽くなるようにしています。
+### 2. ビルド
 
-### サムネイルのスクラブ表示
+```bash
+git clone https://github.com/<あなたのユーザー名>/VideoThumbnailBrowser.git
+cd VideoThumbnailBrowser
+dotnet build
+```
 
-動画ごとに等間隔で複数枚（既定10枚）を事前生成し、ディスクとSQLiteにキャッシュします。
-一覧表示時は「カバー画像（1枚目）」のみ読み込み、実際にマウスが乗ったときに
-残りのフレームを遅延読み込みします。マウスのX座標に応じて表示フレームを切り替えるだけなので、
-リアルタイムでの動画デコードは発生せず、軽快に動作します。
+Visual Studio 2022 で `.sln` を開いてビルドしても構いません。
 
-## 既知の制約・拡張のヒント
+### 3. 使い方
 
-- フォルダ削除時、`FileSystemWatcher` を1つずつ解除する仕組みは未実装で、全フォルダの監視を作り直しています。フォルダ数が非常に多い場合は個別解除に変更すると効率的です。
-- 検索やスキャンは現状アプリ内メモリで行っており、データベース化（フルテキスト検索等）すれば数十万ファイル規模にも耐えられます。
-- ネットワークドライブ上のフォルダを監視する場合、`FileSystemWatcher` の挙動が不安定になることがあります。定期的なポーリングと併用すると安定します。
-- サムネイル枚数・幅は `MainViewModel` 内の `FfmpegThumbnailGenerator` 初期化部分で調整できます。
-- 現状はffmpeg.exeをプロセス起動で呼んでいるため、GPUデコード（`-hwaccel`オプション等）を追加すると大量ファイルのスキャンがさらに高速化できます。
+1. 起動後、左上の☰でフォルダパネルを開き「＋」でフォルダを追加
+   または、サムネイルエリアにフォルダをドラッグ＆ドロップでも追加可能
+2. 初回はサムネイル生成のためスキャンに時間がかかります
+3. サムネイル上でマウスを左右に動かすとフレームが切り替わります
+4. ダブルクリックで登録ソフト1で再生（未登録なら既定のアプリ）
+
+## ファイル構成
+
+```
+VideoThumbnailBrowser.exe
+Tools/
+  ffmpeg.exe
+  ffprobe.exe
+  7z.exe                ← 任意
+メイン.profile          ← プロファイルの設定（監視フォルダ・起動ソフト等）
+メイン.db               ← SQLiteキャッシュ（タグ・評価・再生回数）
+active.txt              ← 最後に使ったプロファイル名
+Thumbnails/
+  メイン/               ← サムネイル画像（プロファイル別）
+  仕事用/
+```
+
+## アップデート時に引き継ぐファイル
+
+**旧バージョンから新バージョンに更新する際は以下をコピーしてください。**
+
+| ファイル/フォルダ | 内容 | 必須 |
+|---|---|---|
+| `*.profile` | 監視フォルダ・起動ソフト設定 | ✅ |
+| `*.db` | タグ・評価・再生回数のキャッシュ | ✅ |
+| `active.txt` | 最後に使ったプロファイル | ✅ |
+| `Thumbnails/` | 生成済みサムネイル画像 | 推奨（ないと再生成） |
+| `Tools/` | FFmpeg・7z等 | ✅ |
+
+**コピー不要なもの（自動生成されます）:**
+- `bin/`、`obj/` フォルダ
+
+## 検索構文
+
+| 入力例 | 効果 |
+|---|---|
+| `アニメ` | ファイル名の部分一致 |
+| `tag:アクション` | タグで絞り込み |
+| `tag:アニメ/SF` | グループ付きタグで絞り込み |
+| `rating:5` | 星5のみ |
+| `rating:>=4` | 星4以上 |
+| `アニメ tag:SF rating:>=3` | AND検索 |
+
+## タグのグループ分け
+
+タグ名にスラッシュを使うとグループ分けできます。
+
+例: `アニメ/SF`、`アニメ/恋愛`、`実写/洋画`
+
+タグフィルターのドロップダウンでグループ別に表示されます。
+
+## ライセンス
+
+MIT License
+
+## 謝辞
+
+- [FFmpeg](https://ffmpeg.org/) — 動画サムネイル生成
+- [SQLite](https://www.sqlite.org/) / [Microsoft.Data.Sqlite](https://docs.microsoft.com/en-us/dotnet/standard/data/sqlite/)
+- [SharpZipLib](https://github.com/icsharpcode/SharpZipLib) — ZIP/CBZ書庫対応
+- [TinySegmenter](http://chasen.org/~taku/software/TinySegmenter/) — 日本語形態素解析（C#移植版を内包）
