@@ -219,24 +219,25 @@ public partial class MainWindow : Window
     }
 
     // ---- D&Dでフォルダ登録 ----
-    private void OnDragOver(object sender, DragEventArgs e)
+    private void OnDragOver(object sender, System.Windows.DragEventArgs e)
     {
-        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
-            ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Effects = e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop)
+            ? System.Windows.DragDropEffects.Copy
+            : System.Windows.DragDropEffects.None;
         e.Handled = true;
     }
 
-    private void OnDrop(object sender, DragEventArgs e)
+    private void OnDrop(object sender, System.Windows.DragEventArgs e)
     {
-        if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
-        var paths = (string[])e.Data.GetData(DataFormats.FileDrop);
+        if (!e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop)) return;
+        var paths = (string[])e.Data.GetData(System.Windows.DataFormats.FileDrop);
         foreach (var path in paths)
             if (System.IO.Directory.Exists(path))
                 Vm.AddFolderPath(path);
     }
 
     // ---- ページ番号直接入力 ----
-    private void OnPageInputKeyDown(object sender, KeyEventArgs e)
+    private void OnPageInputKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key == Key.Enter && sender is System.Windows.Controls.TextBox tb)
         {
