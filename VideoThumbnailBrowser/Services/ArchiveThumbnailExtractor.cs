@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using ICSharpCode.SharpZipLib.Zip;
 
@@ -136,13 +137,13 @@ public class ArchiveThumbnailExtractor
         Process? proc = null;
         try
         {
-            var psi = new System.Diagnostics.ProcessStartInfo
+            var psi = new ProcessStartInfo
             {
                 FileName = exe, Arguments = args,
                 RedirectStandardOutput = true, RedirectStandardError = true,
                 UseShellExecute = false, CreateNoWindow = true
             };
-            proc = new System.Diagnostics.Process { StartInfo = psi };
+            proc = new Process { StartInfo = psi };
             proc.Start();
             var stdout = await proc.StandardOutput.ReadToEndAsync(ct);
             var stderr = await proc.StandardError.ReadToEndAsync(ct);
